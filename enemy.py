@@ -8,6 +8,15 @@ BURN_WEAK = [
     "Giant Spider", "Hornet Swarm", "Swarm of Bats", "Living Tome", "Fungal Horror"
 ]
 
+FINAL_BOSS_TURN_TEXT = [
+    "He stands before you, unhurried.",
+    "He folds his hands. Waiting.",
+    "You hear no breath from beneath that hood.",
+    "The darkness around him seems deeper than the rest.",
+    "His eyes, if he has them, do not leave you.",
+    "Time feels strange down here.",
+]
+
 ENEMY_DATA = {
     # The Forest (floors 1-10)
     "Dire Wolf":       {"hp": 28, "atk": 8,  "def": 1, "xp": 20,  "gold": (2, 8)},
@@ -74,6 +83,16 @@ BOSS_DATA = {
     50:  {"name": "Headmaster Voss, the Corrupted",    "hp": 420, "atk": 32, "def": 4, "xp": 620, "gold": (100, 160)},
     60:  {"name": "Zyx'ara, the Elder Mind",           "hp": 490, "atk": 35, "def": 4, "xp": 750, "gold": (130, 200)},
     70:  {"name": "Ignarath, the Eternal Flame",       "hp": 580, "atk": 39, "def": 5, "xp": 900, "gold": (160, 250)},
+  
+    1000: {
+        "name": "???",
+        "hp": 999999999,
+        "atk": 0,
+        "def": 0,
+        "xp": 0,
+        "gold": (0, 0),
+        "special": "final_boss",
+    },
 }
 
 ZONE_POOLS = {

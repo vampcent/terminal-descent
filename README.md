@@ -10,7 +10,7 @@ Descend through an endless dungeon, floor by floor. Fight enemies, collect loot,
 
 - **Three playable classes** — Warrior, Rogue, and Mage, each with unique stats and abilities
 - **Endless dungeon** — floors go on forever, enemies scale endlessly with depth
-- **Turn-based combat** — attack, use class abilities, consume items, or flee
+- **Turn-based combat** — attack, use class abilities and consume items
 - **RPG progression** — gain XP, level up, and watch your stats grow with every fight
 - **Loot system** — weapons, armour, boots, rings, and consumables drop from enemies
 - **Equipment slots** — equip and swap gear to shape your build
@@ -72,11 +72,8 @@ terminal_descent/
 ## Roadmap
 
 - [ ] More classes (Paladin, Ranger, Necromancer)
-- [ ] Status effects (poison, burn, stun, bleed)
 - [ ] Passive skill trees per class
-- [ ] Rare and legendary item tiers
 - [ ] Procedurally generated room descriptions
-- [ ] Cursed items with drawbacks and upsides
 - [ ] Shrine rooms with risk/reward choices
 
 ---

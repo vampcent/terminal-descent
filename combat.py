@@ -1,6 +1,6 @@
 import random
 from player import Player, CLASS_ABILITIES
-from enemy import Enemy, BURN_IMMUNE, BURN_WEAK
+from enemy import Enemy, BURN_IMMUNE, BURN_WEAK, FINAL_BOSS_TURN_TEXT
 from loot import get_equipped_set, SETS
 
 def apply_status(target, effect, value, max_stacks):
@@ -59,71 +59,27 @@ ABILITIES = {
     "Arcane Burst":  {"cost": 40, "type": "double",  "multiplier": 1.0, "status": None},
 }
 
+FINAL_BOSS_ABILITY_TEXT = {
+    "Power Strike":  "You swing with everything you have. Your blade passes through him like smoke.",
+    "Shield Bash":   "You charge forward. He does not move. You are the one who stumbles.",
+    "War Cry":       "Your lungs fill with rage, but nothing escapes your mouth.",
+    "Backstab":      "You move faster than thought. He is already looking at you when you arrive.",
+    "Smoke Bomb":    "The smoke billows around you. When it clears, he is still there. Still watching.",
+    "Poison Blade":  "The poison drips from your blade. He watches it fall to the floor with something like amusement.",
+    "Fireball":      "The spell leaves your hand. It dies before it reaches him.",
+    "Frost Nova":    "The air around him does not change. If anything, you feel colder.",
+    "Arcane Burst":  "You pour everything into the cast. The magic unravels. He tilts his head slightly.",
+}
+
 def get_active_set_bonus(player):
     set_name, set_data = get_equipped_set(player)
     if set_data:
         return set_data["bonus"]
     return None
 
-def use_ability(player, enemy, ability, set_bonus=None):
-    data = ABILITIES.get(ability)
-    if not data:
-        print("  Unknown ability!")
-        return False
-
-    cost = data["cost"]
-
-    # forbidden mastery — 80% mp cost reduction
-    if set_bonus == "forbidden_mastery":
-        cost = max(1, int(cost * 0.2))
-
-    if player.mp < cost:
-        print("  Not enough MP!")
-        return False
-    player.mp -= cost
-
-    atype = data["type"]
-    mult  = data["multiplier"]
-    status = data["status"]
-
-    def do_hit(multiplier):
-        dmg = enemy.take_damage(int(player.atk * multiplier))
-        # on hit weapon effects
-        weapon = player.equipped.get("weapon")
-        if weapon:
-            handle_on_hit(player, enemy, weapon, set_bonus)
-        return dmg
-
-    if atype == "damage":
-        dmg = do_hit(mult)
-        print(f"  {ability}! You deal {dmg} damage!")
-        # forbidden mastery 15% double hit
-        if set_bonus == "forbidden_mastery" and random.randint(1,100) <= 15:
-            dmg2 = do_hit(mult)
-            print(f"  Forbidden Mastery! The spell echoes for {dmg2} extra damage!")
-
-    elif atype == "double":
-        dmg1 = do_hit(mult)
-        dmg2 = do_hit(mult)
-        print(f"  {ability}! Two hits for {dmg1} and {dmg2} damage!")
-        if set_bonus == "forbidden_mastery" and random.randint(1,100) <= 15:
-            dmg3 = do_hit(mult)
-            print(f"  Forbidden Mastery! A third strike for {dmg3} damage!")
-
-    elif atype == "buff":
-        print(f"  {ability}!")
-
-    if status:
-        effect, value, max_stacks = status
-        if effect == "poison":
-            value = int(player.atk * 0.20)
-        elif effect == "spd_up":
-            value = player.spd
-        apply_status(enemy if effect in ("atk_down", "def_down", "poison") else player, effect, value, max_stacks)
-
-    return True
-
 def handle_on_hit(player, enemy, weapon, set_bonus=None):
+    if not weapon:
+        return
     on_hit = weapon.get("on_hit")
     if not on_hit:
         return
@@ -179,7 +135,6 @@ def handle_on_kill(player, enemy, set_bonus=None):
         player.atk = player.base_atk
         print(f"  Souldrainer feeds on the kill! ATK permanently +2!")
 
-    # reapers pact set bonus
     if set_bonus == "reapers_pact":
         if player.hp <= int(player.max_hp * 0.30):
             player.base_atk += 2
@@ -264,6 +219,60 @@ def choose_ability(player, enemy, set_bonus=None):
     else:
         print("  Invalid choice, you hesitate!")
 
+def use_ability(player, enemy, ability, set_bonus=None):
+    data = ABILITIES.get(ability)
+    if not data:
+        print("  Unknown ability!")
+        return False
+
+    cost = data["cost"]
+    if set_bonus == "forbidden_mastery":
+        cost = max(1, int(cost * 0.2))
+
+    if player.mp < cost:
+        print("  Not enough MP!")
+        return False
+    player.mp -= cost
+
+    atype = data["type"]
+    mult  = data["multiplier"]
+    status = data["status"]
+
+    def do_hit(multiplier):
+        dmg = enemy.take_damage(int(player.atk * multiplier))
+        weapon = player.equipped.get("weapon")
+        if weapon:
+            handle_on_hit(player, enemy, weapon, set_bonus)
+        return dmg
+
+    if atype == "damage":
+        dmg = do_hit(mult)
+        print(f"  {ability}! You deal {dmg} damage!")
+        if set_bonus == "forbidden_mastery" and random.randint(1, 100) <= 15:
+            dmg2 = do_hit(mult)
+            print(f"  Forbidden Mastery! The spell echoes for {dmg2} extra damage!")
+
+    elif atype == "double":
+        dmg1 = do_hit(mult)
+        dmg2 = do_hit(mult)
+        print(f"  {ability}! Two hits for {dmg1} and {dmg2} damage!")
+        if set_bonus == "forbidden_mastery" and random.randint(1, 100) <= 15:
+            dmg3 = do_hit(mult)
+            print(f"  Forbidden Mastery! A third strike for {dmg3} damage!")
+
+    elif atype == "buff":
+        print(f"  {ability}!")
+
+    if status:
+        effect, value, max_stacks = status
+        if effect == "poison":
+            value = int(player.atk * 0.20)
+        elif effect == "spd_up":
+            value = player.spd
+        apply_status(enemy if effect in ("atk_down", "def_down", "poison") else player, effect, value, max_stacks)
+
+    return True
+
 def show_turn_header(player, enemy, set_bonus=None):
     abilities = CLASS_ABILITIES[player.char_class]
     consumables = [item for item in player.inventory if item["slot"] == "consumable"]
@@ -299,7 +308,94 @@ def show_turn_header(player, enemy, set_bonus=None):
     print(f"  4. Attack + Use Item")
     print(f"  5. Ability + Use Item")
 
+def combat_final_boss(player, enemy):
+    print(f"\n  The hooded stranger rises from his chair.")
+    print(f"  \"So. You actually made it.\"")
+    print(f"\n  HP:  ???")
+    print(f"  ATK: ???")
+    print(f"  DEF: ???\n")
+
+    turn_index = 0
+    set_bonus = get_active_set_bonus(player)
+
+    while player.hp > 0:
+
+        print(f"\n  {'='*40}")
+        print(f"  ???")
+        print(f"  HP: ???")
+        print(f"  {'='*40}")
+        print(f"\n  {player.name} | HP: {player.hp}/{player.max_hp} | MP: {player.mp}/{player.max_mp}")
+
+        abilities = CLASS_ABILITIES[player.char_class]
+        print(f"\n  Abilities:")
+        for ab in abilities:
+            print(f"    - {ab}")
+
+        consumables = [item for item in player.inventory if item["slot"] == "consumable"]
+        if consumables:
+            print(f"\n  Inventory:")
+            for item in consumables:
+                print(f"    - {item['name']} — {item['desc']}")
+        else:
+            print(f"\n  Inventory: empty")
+
+        print(f"\n  What will you do?")
+        print(f"  1. Attack")
+        print(f"  2. Ability")
+        print(f"  3. Use Item")
+        print(f"  4. Attack + Use Item")
+        print(f"  5. Ability + Use Item")
+
+        action = input("\n  > ").strip()
+
+        if action in ("1", "4"):
+            weapon = player.equipped.get("weapon")
+            if weapon and weapon.get("on_hit") == "instant_kill_1":
+                chance = 5 if set_bonus == "void_incarnate" else 1
+                if random.randint(1, 100) <= chance:
+                    print(f"\n  The Blade of the Abyss tears through reality!")
+                    print(f"  ???: \"...finally. Someone read my note.\"")
+                    print(f"\n  *** THE DUNGEON HAS BEEN DEFEATED. ***")
+                    return "victory_final"
+            print(f"  You attack. Your strike lands but draws no reaction.")
+            if action == "4":
+                print(f"  You reach for your supplies. He watches patiently. Nothing seems to help.")
+
+        elif action in ("2", "5"):
+            print(f"\n  Choose an ability:")
+            for i, ab in enumerate(abilities, 1):
+                print(f"  {i}. {ab}")
+            choice = input("\n  > ").strip()
+            if choice.isdigit() and 1 <= int(choice) <= len(abilities):
+                ability = abilities[int(choice) - 1]
+                print(f"  {FINAL_BOSS_ABILITY_TEXT.get(ability, 'Nothing happens.')}")
+            if action == "5":
+                print(f"  You reach for your supplies. He watches patiently. Nothing seems to help.")
+
+        elif action == "3":
+            print(f"  You reach for your supplies. He watches patiently. Nothing seems to help.")
+
+        else:
+            print("  Invalid choice.")
+
+        print(f"\n  {FINAL_BOSS_TURN_TEXT[turn_index % len(FINAL_BOSS_TURN_TEXT)]}")
+        turn_index += 1
+
+        dmg = int(player.max_hp * 0.20)
+        player.hp = max(0, player.hp - dmg)
+        print(f"  He reaches out. You lose {dmg} HP.")
+
+        if player.hp <= 0:
+            print(f"\n  ???: \"You were so close.\"")
+            print(f"\n  You have been defeated by ???...")
+            return "dead"
+
+    return "dead"
+
 def combat(player, enemy):
+    if hasattr(enemy, 'is_boss') and enemy.name == "???":
+        return combat_final_boss(player, enemy)
+
     print(f"\n  A {enemy.name} appears!")
     print(f"  HP: {enemy.hp} | ATK: {enemy.atk} | DEF: {enemy.defense}\n")
 
@@ -307,7 +403,6 @@ def combat(player, enemy):
     eternal_inferno = set_bonus == "eternal_inferno"
     first_hit_blocked = False
 
-    # igris oathbound shield — block first hit
     accessory = player.equipped.get("accessory")
     if accessory and accessory.get("special") == "block_first_hit":
         first_hit_blocked = True
@@ -339,7 +434,6 @@ def combat(player, enemy):
         player.defense = int(player.base_defense + bonus_def)
         player.spd = int(player.base_spd + bonus_spd)
 
-        # last stand set bonus — double ATK and DEF below 20% HP
         if set_bonus == "last_stand" and player.hp <= int(player.max_hp * 0.20):
             player.atk *= 2
             player.defense *= 2
@@ -351,7 +445,7 @@ def combat(player, enemy):
         if action == "1":
             dmg = enemy.take_damage(player.atk)
             print(f"  You attack for {dmg} damage!")
-            handle_on_hit(player, enemy, player.equipped.get("weapon", {}), set_bonus)
+            handle_on_hit(player, enemy, player.equipped.get("weapon"), set_bonus)
 
         elif action == "2":
             choose_ability(player, enemy, set_bonus)
@@ -362,7 +456,7 @@ def combat(player, enemy):
         elif action == "4":
             dmg = enemy.take_damage(player.atk)
             print(f"  You attack for {dmg} damage!")
-            handle_on_hit(player, enemy, player.equipped.get("weapon", {}), set_bonus)
+            handle_on_hit(player, enemy, player.equipped.get("weapon"), set_bonus)
             if not enemy.is_alive():
                 break
             use_item(player, enemy)
@@ -389,12 +483,10 @@ def combat(player, enemy):
             reduction = enemy.status_effects['atk_down']['value'] * enemy.status_effects['atk_down']['stacks']
             enemy_atk = max(1, int(enemy.atk - reduction))
 
-        # fire resist ring — 10% less damage from burn immune enemies
         ring = player.equipped.get("ring")
         if ring and ring.get("special") == "fire_resist_10" and enemy.name in BURN_IMMUNE:
             enemy_atk = int(enemy_atk * 0.9)
 
-        # unyielding stone set bonus — 20% chance to take 0 damage
         if set_bonus == "unyielding_stone" and random.randint(1, 100) <= 20:
             print(f"  Unyielding Stone! You absorb the hit!")
         elif first_hit_blocked:
@@ -403,7 +495,6 @@ def combat(player, enemy):
         else:
             evade_chance = max(0, (player.spd / (player.spd + enemy.atk)) * 100 - 20)
 
-            # evasion bonuses from equipment
             armor = player.equipped.get("armor")
             boots = player.equipped.get("boots")
             if armor and armor.get("special") == "evasion_10":
@@ -414,13 +505,11 @@ def combat(player, enemy):
             if random.randint(1, 100) <= evade_chance:
                 print(f"  You dodge the {enemy.name}'s attack!")
             else:
-                # burn resist accessory
                 dmg = player.take_damage(enemy_atk)
                 accessory = player.equipped.get("accessory")
                 if accessory and accessory.get("special") == "burn_resist_50":
                     dmg = int(dmg * 0.5)
                     player.hp += int(dmg * 0.5)
-                # deathless shroud check
                 if player.hp <= 0:
                     armor = player.equipped.get("armor")
                     if armor and armor.get("special") == "death_save" and not armor.get("used"):
@@ -434,7 +523,6 @@ def combat(player, enemy):
                 else:
                     print(f"  {enemy.name} hits you for {dmg} damage!")
 
-                # reflect damage — shield of the deep earth
                 accessory = player.equipped.get("accessory")
                 if accessory and accessory.get("special") == "reflect_10":
                     reflect = max(1, int(dmg * 0.1))
@@ -450,7 +538,6 @@ def combat(player, enemy):
         player.gold += enemy.gold
         print(f"  +{enemy.xp} XP | +{enemy.gold} gold")
 
-        # void incarnate — 5% skip next combat
         if set_bonus == "void_incarnate" and random.randint(1, 100) <= 15:
             print(f"  Void Incarnate! The next combat will be skipped.")
             player.skip_next_combat = True
