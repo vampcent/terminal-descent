@@ -1,5 +1,13 @@
 import random
 
+BURN_IMMUNE = [
+    "Lava Elemental", "Demon Grunt", "Fire Drake", "Ash Wraith", "Infernal Knight"
+]
+
+BURN_WEAK = [
+    "Giant Spider", "Hornet Swarm", "Swarm of Bats", "Living Tome", "Fungal Horror"
+]
+
 ENEMY_DATA = {
     # The Forest (floors 1-10)
     "Dire Wolf":       {"hp": 28, "atk": 8,  "def": 1, "xp": 20,  "gold": (2, 8)},
@@ -85,10 +93,12 @@ class Enemy:
         self.hp = hp
         self.max_hp = hp
         self.atk = atk
+        self.base_defense = defense
         self.defense = defense
         self.xp = xp
         self.gold = random.randint(*gold)
         self.is_boss = False
+        self.status_effects = {}
 
     def take_damage(self, amount):
         damage = max(1, amount - self.defense)
