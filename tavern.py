@@ -1,6 +1,18 @@
 import random
+from colorama import Fore, Style
 from loot import CONSUMABLES, drop_loot, equip_item, unequip_item
 from combat import apply_status
+
+RARITY_COLOURS = {
+    "common":    Style.RESET_ALL,
+    "uncommon":  Fore.GREEN,
+    "rare":      Fore.BLUE,
+    "legendary": Fore.YELLOW,
+}
+
+def rarity_colour(item):
+    rarity = item.get("rarity", "common")
+    return RARITY_COLOURS.get(rarity, Style.RESET_ALL)
 
 STRANGER_DIALOGUE = {
     "The Forest": {
@@ -124,6 +136,13 @@ SHOP_ITEMS = {
     ],
 }
 
+SELL_PRICES = {
+    "common":    20,
+    "uncommon":  30,
+    "rare":      100,
+    "legendary": 300,
+}
+
 def get_price(base_price, floor):
     return int(base_price * (1 + floor * 0.05))
 
@@ -141,10 +160,10 @@ def talk_to_stranger(player, floor, bosses_beaten):
     current_index = get_zone_index(current_zone)
 
     if floor >= 999:
-        print(f"\n  ???: \"{STRANGER_FINAL}\"")
+        print(f"\n  {Fore.RED}???: \"{STRANGER_FINAL}\"{Style.RESET_ALL}")
         return
 
-    print(f"\n  The hooded stranger turns to face you.")
+    print(f"\n  {Fore.RED}The hooded stranger turns to face you.{Style.RESET_ALL}")
     print(f"\n  Which zone would you like to ask about?")
 
     available = []
@@ -157,7 +176,7 @@ def talk_to_stranger(player, floor, bosses_beaten):
             available.append((zone, "teaser"))
 
     for i, (zone, state) in enumerate(available, 1):
-        tag = " (cleared)" if state == "cleared" else " (current)" if state == "current" else " (teaser)"
+        tag = f" {Fore.GREEN}(cleared){Style.RESET_ALL}" if state == "cleared" else f" {Fore.CYAN}(current){Style.RESET_ALL}" if state == "current" else f" {Fore.YELLOW}(teaser){Style.RESET_ALL}"
         print(f"  {i}. {zone}{tag}")
     print(f"  {len(available)+1}. Never mind.")
 
@@ -172,30 +191,31 @@ def talk_to_stranger(player, floor, bosses_beaten):
     zone, state = available[int(choice)-1]
     dialogue = STRANGER_DIALOGUE[zone][state]
     if dialogue:
-        print(f"\n  ???: \"{dialogue}\"")
+        print(f"\n  {Fore.RED}???: \"{dialogue}\"{Style.RESET_ALL}")
     else:
-        print(f"\n  ???: \"{STRANGER_LOCKED}\"")
+        print(f"\n  {Fore.RED}???: \"{STRANGER_LOCKED}\"{Style.RESET_ALL}")
 
 def visit_vendor(player, vendor_name, floor):
     greetings = VENDOR_GREETINGS[vendor_name]
-    print(f"\n  {vendor_name}: \"{random.choice(greetings)}\"")
+    print(f"\n  {Fore.CYAN}{vendor_name}{Style.RESET_ALL}: \"{random.choice(greetings)}\"")
 
-    if vendor_name == "Bram" and not hasattr(player, 'bram_visit_count'):
-        player.bram_visit_count = 0
     if vendor_name == "Bram":
+        if not hasattr(player, 'bram_visit_count'):
+            player.bram_visit_count = 0
         player.bram_visit_count += 1
         if player.bram_visit_count % 3 == 0:
             hint_index = (player.bram_visit_count // 3 - 1) % len(BRAM_HINTS)
-            print(f"\n  Bram leans in and lowers his voice.")
-            print(f"  Bram: \"{BRAM_HINTS[hint_index]}\"")
+            print(f"\n  {Fore.CYAN}Bram{Style.RESET_ALL} leans in and lowers his voice.")
+            print(f"  {Fore.CYAN}Bram{Style.RESET_ALL}: \"{Fore.RED}{BRAM_HINTS[hint_index]}{Style.RESET_ALL}\"")
 
     items = SHOP_ITEMS[vendor_name]
     while True:
-        print(f"\n  Gold: {player.gold}g")
+        print(f"\n  {Fore.YELLOW}Gold: {player.gold}g{Style.RESET_ALL}")
         print(f"\n  {vendor_name}'s wares:")
         for i, item in enumerate(items, 1):
             price = get_price(item["base_price"], floor)
-            print(f"  {i}. {item['name']} — {item['desc']} ({price}g)")
+            affordable = Fore.YELLOW if player.gold >= price else Fore.RED
+            print(f"  {i}. {item['name']} — {item['desc']} ({affordable}{price}g{Style.RESET_ALL})")
         print(f"  {len(items)+1}. Leave")
 
         choice = input("\n  > ").strip()
@@ -209,55 +229,60 @@ def visit_vendor(player, vendor_name, floor):
         price = get_price(item["base_price"], floor)
 
         if player.gold < price:
-            print(f"  Not enough gold! You need {price}g.")
+            print(f"  {Fore.RED}Not enough gold! You need {price}g.{Style.RESET_ALL}")
             continue
 
-        # ale can only be bought once per visit
         if item.get("ale"):
             already_has = any(i["name"] == "Ale" for i in player.inventory)
             if already_has:
-                print("  You've had enough ale for now.")
+                print(f"  {Fore.RED}You've had enough ale for now.{Style.RESET_ALL}")
                 continue
 
         player.gold -= price
         bought = dict(item)
         player.inventory.append(bought)
-        print(f"  Bought {item['name']} for {price}g.")
+        print(f"  {Fore.GREEN}Bought {item['name']} for {price}g.{Style.RESET_ALL}")
 
 def view_equipment(player):
     print(f"\n  {'='*40}")
-    print(f"  {player.name} the {player.char_class} — Level {player.level}")
-    print(f"  HP: {player.hp}/{player.max_hp} | MP: {player.mp}/{player.max_mp}")
+    print(f"  {Fore.CYAN}{player.name} the {player.char_class}{Style.RESET_ALL} — Level {Fore.YELLOW}{player.level}{Style.RESET_ALL}")
+    print(f"  {Fore.GREEN}HP: {player.hp}/{player.max_hp}{Style.RESET_ALL} | {Fore.BLUE}MP: {player.mp}/{player.max_mp}{Style.RESET_ALL}")
     print(f"  ATK: {player.atk}  DEF: {player.defense}  SPD: {player.spd}")
-    print(f"  XP: {player.xp}/{player.xp_next} | Gold: {player.gold}g")
+    print(f"  XP: {player.xp}/{player.xp_next} | {Fore.YELLOW}Gold: {player.gold}g{Style.RESET_ALL}")
     print(f"\n  Equipped:")
     for slot, item in player.equipped.items():
-        name = item["name"] if item else "None"
-        print(f"    {slot.capitalize()}: {name}")
+        if item:
+            colour = rarity_colour(item)
+            print(f"    {slot.capitalize()}: {colour}{item['name']}{Style.RESET_ALL}")
+        else:
+            print(f"    {slot.capitalize()}: None")
     print(f"\n  Inventory ({len(player.inventory)} items):")
     if not player.inventory:
         print("    Empty")
     else:
         for i, item in enumerate(player.inventory, 1):
-            print(f"    {i}. {item['name']} ({item.get('rarity','').capitalize()} {item['slot']})")
+            colour = rarity_colour(item)
+            print(f"    {i}. {colour}{item['name']}{Style.RESET_ALL} ({item.get('rarity','').capitalize()} {item['slot']})")
 
 def manage_inventory(player):
     while True:
         view_equipment(player)
         print(f"\n  1. Equip an item")
         print(f"  2. Unequip a slot")
-        print(f"  3. Back")
+        print(f"  3. Sell an item")
+        print(f"  4. Back")
         choice = input("\n  > ").strip()
 
         if choice == "1":
             equippable = [i for i in player.inventory if i["slot"] != "consumable"]
             if not equippable:
-                print("  No equippable items in inventory.")
+                print(f"  {Fore.RED}No equippable items in inventory.{Style.RESET_ALL}")
                 continue
             print("\n  Choose an item to equip:")
             for i, item in enumerate(equippable, 1):
+                colour = rarity_colour(item)
                 bonuses = ", ".join(f"+{v} {k}" for k,v in item.get("bonus",{}).items())
-                print(f"  {i}. {item['name']} ({bonuses})")
+                print(f"  {i}. {colour}{item['name']}{Style.RESET_ALL} ({bonuses})")
             print(f"  {len(equippable)+1}. Cancel")
             c = input("\n  > ").strip()
             if c.isdigit() and 1 <= int(c) <= len(equippable):
@@ -266,11 +291,13 @@ def manage_inventory(player):
         elif choice == "2":
             slots = [s for s, i in player.equipped.items() if i is not None]
             if not slots:
-                print("  Nothing equipped.")
+                print(f"  {Fore.RED}Nothing equipped.{Style.RESET_ALL}")
                 continue
             print("\n  Choose a slot to unequip:")
             for i, slot in enumerate(slots, 1):
-                print(f"  {i}. {slot.capitalize()} ({player.equipped[slot]['name']})")
+                item = player.equipped[slot]
+                colour = rarity_colour(item)
+                print(f"  {i}. {slot.capitalize()} ({colour}{item['name']}{Style.RESET_ALL})")
             print(f"  {len(slots)+1}. Cancel")
             c = input("\n  > ").strip()
             if c.isdigit() and 1 <= int(c) <= len(slots):
@@ -279,23 +306,42 @@ def manage_inventory(player):
                 player.inventory.append(item)
 
         elif choice == "3":
+            sellable = [i for i in player.inventory if i["slot"] != "consumable"]
+            if not sellable:
+                print(f"  {Fore.RED}No items to sell. Unequip items first if needed.{Style.RESET_ALL}")
+                continue
+            print("\n  Choose an item to sell:")
+            for i, item in enumerate(sellable, 1):
+                rarity = item.get("rarity", "common")
+                price = SELL_PRICES.get(rarity, 20)
+                colour = rarity_colour(item)
+                print(f"  {i}. {colour}{item['name']}{Style.RESET_ALL} ({rarity.capitalize()}) — {Fore.YELLOW}{price}g{Style.RESET_ALL}")
+            print(f"  {len(sellable)+1}. Cancel")
+            c = input("\n  > ").strip()
+            if c.isdigit() and 1 <= int(c) <= len(sellable):
+                item = sellable[int(c)-1]
+                rarity = item.get("rarity", "common")
+                price = SELL_PRICES.get(rarity, 20)
+                player.inventory.remove(item)
+                player.gold += price
+                print(f"  {Fore.GREEN}Sold {item['name']} for {price}g.{Style.RESET_ALL}")
+
+        elif choice == "4":
             break
 
 def tavern(player, floor, bosses_beaten):
-    print(f"\n  {'='*40}")
-    print(f"  The Wandering Flagon")
-    print(f"  Floor {floor} | Gold: {player.gold}g")
-    print(f"  {'='*40}")
-
-    ale_active = False
+    print(f"\n  {Fore.YELLOW}=========================================={Style.RESET_ALL}")
+    print(f"  {Fore.YELLOW}The Wandering Flagon{Style.RESET_ALL}")
+    print(f"  Floor {floor} | {Fore.YELLOW}Gold: {player.gold}g{Style.RESET_ALL}")
+    print(f"  {Fore.YELLOW}=========================================={Style.RESET_ALL}")
 
     while True:
         print(f"\n  What would you like to do?")
-        print(f"  1. Talk to ??? (Hooded Stranger)")
-        print(f"  2. Visit Bram (Barkeep)")
-        print(f"  3. Visit Sister Maren (Healer)")
-        print(f"  4. Visit Aldric the Grey (Alchemist)")
-        print(f"  5. Visit Sera (Merchant)")
+        print(f"  1. Talk to {Fore.RED}???{Style.RESET_ALL} (Hooded Stranger)")
+        print(f"  2. Visit {Fore.CYAN}Bram{Style.RESET_ALL} (Barkeep)")
+        print(f"  3. Visit {Fore.CYAN}Sister Maren{Style.RESET_ALL} (Healer)")
+        print(f"  4. Visit {Fore.CYAN}Aldric the Grey{Style.RESET_ALL} (Alchemist)")
+        print(f"  5. Visit {Fore.CYAN}Sera{Style.RESET_ALL} (Merchant)")
         print(f"  6. View stats and equipment")
         print(f"  7. Head to the dungeon")
 
@@ -314,7 +360,6 @@ def tavern(player, floor, bosses_beaten):
         elif choice == "6":
             manage_inventory(player)
         elif choice == "7":
-            # apply ale effect if purchased
             ale = next((i for i in player.inventory if i.get("ale")), None)
             if ale:
                 player.base_atk += 1
@@ -322,10 +367,7 @@ def tavern(player, floor, bosses_beaten):
                 player.base_spd = max(1, player.base_spd - 1)
                 player.spd = player.base_spd
                 player.inventory.remove(ale)
-                print(f"\n  You down the ale. Your blood runs hot.")
-                ale_active = True
+                print(f"\n  {Fore.YELLOW}You down the ale. Your blood runs hot.{Style.RESET_ALL}")
             break
         else:
             print("  Invalid choice.")
-
-    return ale_active

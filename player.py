@@ -1,3 +1,5 @@
+from colorama import Fore, Style
+
 CLASS_STATS = {
     "Warrior": {"max_hp": 120, "max_mp": 40,  "atk": 7,  "def": 5, "spd": 4},
     "Rogue":   {"max_hp": 80,  "max_mp": 50,  "atk": 9,  "def": 3, "spd": 8},
@@ -36,10 +38,10 @@ class Player:
         self.inventory = []
         self.status_effects = {}
         self.equipped = {
-            "weapon": None,
-            "armor": None,
-            "boots": None,
-            "ring": None,
+            "weapon":    None,
+            "armor":     None,
+            "boots":     None,
+            "ring":      None,
             "accessory": None,
         }
 
@@ -56,12 +58,12 @@ class Player:
         self.spd = self.base_spd
         self.hp = self.max_hp
         self.mp = self.max_mp
-        print(f"\n*** LEVEL UP! You are now level {self.level}! ***")
-        print(f"  HP: +10 | MP: +8 | ATK: +1 | DEF: +1 | SPD: +1")
+        print(f"\n  {Fore.YELLOW}*** LEVEL UP! You are now level {self.level}! ***{Style.RESET_ALL}")
+        print(f"  {Fore.YELLOW}HP: +10 | MP: +8 | ATK: +1 | DEF: +1 | SPD: +1{Style.RESET_ALL}")
 
     def gain_xp(self, amount):
         self.xp += amount
-        print(f"  You gained {amount} XP!")
+        print(f"  {Fore.YELLOW}You gained {amount} XP!{Style.RESET_ALL}")
         while self.xp >= self.xp_next:
             self.xp -= self.xp_next
             self.level_up()
@@ -72,9 +74,9 @@ class Player:
         return damage
 
     def show_stats(self):
-        print(f"\n  {self.name} the {self.char_class} — Level {self.level}")
-        print(f"  HP:  {self.hp}/{self.max_hp}")
-        print(f"  MP:  {self.mp}/{self.max_mp}")
+        print(f"\n  {Fore.CYAN}{self.name} the {self.char_class}{Style.RESET_ALL} — Level {Fore.YELLOW}{self.level}{Style.RESET_ALL}")
+        print(f"  {Fore.GREEN}HP:  {self.hp}/{self.max_hp}{Style.RESET_ALL}")
+        print(f"  {Fore.BLUE}MP:  {self.mp}/{self.max_mp}{Style.RESET_ALL}")
         print(f"  ATK: {self.atk}  DEF: {self.defense}  SPD: {self.spd}")
         print(f"  XP:  {self.xp}/{self.xp_next}")
-        print(f"  Gold: {self.gold}g")
+        print(f"  {Fore.YELLOW}Gold: {self.gold}g{Style.RESET_ALL}")

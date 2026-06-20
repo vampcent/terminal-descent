@@ -2,7 +2,7 @@
 
 A text-based roguelike dungeon crawler RPG playable entirely in your terminal, built in Python.
 
-Descend through an endless dungeon, floor by floor. Fight enemies, collect loot, build your character and survive as long as you can. There is no escape. The only way out is death.
+Descend through a seemingly endless dungeon, floor by floor. Fight enemies, collect loot, build your character and survive as you try to make it to, and defeat the final boss.
 
 ---
 
@@ -46,26 +46,7 @@ python main.py
 4. Visit the tavern to rest, restock, and spend your gold
 5. Descend to the next floor and repeat
 6. Every 10 floors, face a boss - defeat it or die trying
-7. There is no win condition. Descend until you fall.
-
----
-
-## Project Structure
-
-```
-terminal_descent/
-├── main.py          # Entry point and game loop
-├── game.py          # Core game state and floor logic
-├── player.py        # Player class — stats, levelling, inventory
-├── enemy.py         # Enemy class and scaling enemy tables
-├── combat.py        # Turn-based combat loop
-├── loot.py          # Loot tables and item drops
-├── tavern.py        # Tavern menu and shop logic
-├── display.py       # All terminal output and formatting
-└── data/
-    ├── enemies.json # Enemy definitions
-    └── items.json   # Item and loot definitions
-```
+7. Reach floor 1000 and defeat the final boss to win!
 
 ---
 

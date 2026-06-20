@@ -1,4 +1,16 @@
 import random
+from colorama import Fore, Style
+
+RARITY_COLOURS = {
+    "common":    Style.RESET_ALL,
+    "uncommon":  Fore.GREEN,
+    "rare":      Fore.BLUE,
+    "legendary": Fore.YELLOW,
+}
+
+def rarity_colour(item):
+    rarity = item.get("rarity", "common")
+    return RARITY_COLOURS.get(rarity, Style.RESET_ALL)
 
 CONSUMABLES = {
     "Health Potion": {
@@ -61,7 +73,6 @@ CONSUMABLES = {
         "bonus": {"hp": 1.0, "mp": 1.0},
         "desc": "Fully restores HP and MP",
     },
-
     "Crimson Dew": {
         "slot": "consumable",
         "rarity": "rare",
@@ -78,7 +89,7 @@ WEAPONS = {
     "Forester's Axe":      {"slot": "weapon", "rarity": "uncommon",  "zone": (1,10),   "bonus": {"atk": 5}},
     "Fang Blade":          {"slot": "weapon", "rarity": "uncommon",  "zone": (1,10),   "bonus": {"atk": 4, "spd": 1}},
     "Wolf's Tooth Dagger": {"slot": "weapon", "rarity": "rare",      "zone": (1,10),   "bonus": {"atk": 6, "spd": 2}},
-    "Thornwood Staff":     {"slot": "weapon", "rarity": "rare",      "zone": (1,10),   "bonus": {"atk": 7, "mp": 10}},
+    "Thornwood Staff":     {"slot": "weapon", "rarity": "rare",      "zone": (1,10),   "bonus": {"atk": 7, "max_mp": 10}},
     "Sylvan Blade":        {"slot": "weapon", "rarity": "legendary", "zone": (1,10),   "bonus": {"atk": 9, "spd": 3}},
 
     # The Mines (floors 11-20)
@@ -122,24 +133,24 @@ WEAPONS = {
     "Staff of Unmaking":   {"slot": "weapon", "rarity": "legendary", "zone": (41,50),  "bonus": {"atk": 24, "spd": 6}},
 
     # The Underdark (floors 51-60)
-    "Shadow Blade":           {"slot": "weapon", "rarity": "common",    "zone": (51,60),  "bonus": {"atk": 16}},
-    "Duergar Axe":            {"slot": "weapon", "rarity": "common",    "zone": (51,60),  "bonus": {"atk": 17}},
-    "Mind Spike":             {"slot": "weapon", "rarity": "common",    "zone": (51,60),  "bonus": {"atk": 17}},
-    "Assassin's Edge":        {"slot": "weapon", "rarity": "uncommon",  "zone": (51,60),  "bonus": {"atk": 19, "spd": 4}},
-    "Flayer Staff":           {"slot": "weapon", "rarity": "uncommon",  "zone": (51,60),  "bonus": {"atk": 18}},
-    "Krakenbone Sword":       {"slot": "weapon", "rarity": "rare",      "zone": (51,60),  "bonus": {"atk": 22, "def": 4}},
-    "Void Touched Blade":     {"slot": "weapon", "rarity": "rare",      "zone": (51,60),  "bonus": {"atk": 23}},
-    "Blade of the Elder Mind":{"slot": "weapon", "rarity": "legendary", "zone": (51,60),  "bonus": {"atk": 28, "spd": 8}, "on_hit": "spd_up_0.1"},
+    "Shadow Blade":            {"slot": "weapon", "rarity": "common",    "zone": (51,60),  "bonus": {"atk": 16}},
+    "Duergar Axe":             {"slot": "weapon", "rarity": "common",    "zone": (51,60),  "bonus": {"atk": 17}},
+    "Mind Spike":              {"slot": "weapon", "rarity": "common",    "zone": (51,60),  "bonus": {"atk": 17}},
+    "Assassin's Edge":         {"slot": "weapon", "rarity": "uncommon",  "zone": (51,60),  "bonus": {"atk": 19, "spd": 4}},
+    "Flayer Staff":            {"slot": "weapon", "rarity": "uncommon",  "zone": (51,60),  "bonus": {"atk": 18}},
+    "Krakenbone Sword":        {"slot": "weapon", "rarity": "rare",      "zone": (51,60),  "bonus": {"atk": 22, "def": 4}},
+    "Void Touched Blade":      {"slot": "weapon", "rarity": "rare",      "zone": (51,60),  "bonus": {"atk": 23}},
+    "Blade of the Elder Mind": {"slot": "weapon", "rarity": "legendary", "zone": (51,60),  "bonus": {"atk": 28, "spd": 8}, "on_hit": "spd_up_0.1"},
 
     # The Core (floors 61-70)
-    "Ember Sword":              {"slot": "weapon", "rarity": "common",    "zone": (61,70),  "bonus": {"atk": 20}},
-    "Demon Iron Blade":         {"slot": "weapon", "rarity": "common",    "zone": (61,70),  "bonus": {"atk": 21}},
-    "Ashen Spear":              {"slot": "weapon", "rarity": "common",    "zone": (61,70),  "bonus": {"atk": 21}},
-    "Infernal Cleaver":         {"slot": "weapon", "rarity": "uncommon",  "zone": (61,70),  "bonus": {"atk": 23}},
-    "Drake Fang Blade":         {"slot": "weapon", "rarity": "uncommon",  "zone": (61,70),  "bonus": {"atk": 22, "spd": 5}},
-    "Hellforged Sword":         {"slot": "weapon", "rarity": "rare",      "zone": (61,70),  "bonus": {"atk": 26}},
-    "Ignarath's Ember":         {"slot": "weapon", "rarity": "rare",      "zone": (61,70),  "bonus": {"atk": 28}},
-    "The Eternal Flame Blade":  {"slot": "weapon", "rarity": "legendary", "zone": (61,70),  "bonus": {"atk": 34, "spd": 10}, "on_hit": "burn_stack"},
+    "Ember Sword":             {"slot": "weapon", "rarity": "common",    "zone": (61,70),  "bonus": {"atk": 20}},
+    "Demon Iron Blade":        {"slot": "weapon", "rarity": "common",    "zone": (61,70),  "bonus": {"atk": 21}},
+    "Ashen Spear":             {"slot": "weapon", "rarity": "common",    "zone": (61,70),  "bonus": {"atk": 21}},
+    "Infernal Cleaver":        {"slot": "weapon", "rarity": "uncommon",  "zone": (61,70),  "bonus": {"atk": 23}},
+    "Drake Fang Blade":        {"slot": "weapon", "rarity": "uncommon",  "zone": (61,70),  "bonus": {"atk": 22, "spd": 5}},
+    "Hellforged Sword":        {"slot": "weapon", "rarity": "rare",      "zone": (61,70),  "bonus": {"atk": 26}},
+    "Ignarath's Ember":        {"slot": "weapon", "rarity": "rare",      "zone": (61,70),  "bonus": {"atk": 28}},
+    "The Eternal Flame Blade": {"slot": "weapon", "rarity": "legendary", "zone": (61,70),  "bonus": {"atk": 34, "spd": 10}, "on_hit": "burn_stack"},
 
     # The Abyss (floors 71+)
     "Void Shard":          {"slot": "weapon", "rarity": "common",    "zone": (71,999), "bonus": {"atk": 24}},
@@ -383,7 +394,7 @@ RINGS = {
     "Ashen Ring":              {"slot": "ring", "rarity": "common",    "zone": (61,70),  "bonus": {"spd": 8}},
     "Infernal Band":           {"slot": "ring", "rarity": "uncommon",  "zone": (61,70),  "bonus": {"atk": 12, "spd": 8}},
     "Drake Scale Ring":        {"slot": "ring", "rarity": "uncommon",  "zone": (61,70),  "bonus": {"def": 11, "atk": 7}},
-    "Ring of the Eternal Flame":{"slot": "ring", "rarity": "rare",     "zone": (61,70),  "bonus": {"atk": 16, "def": 11}},
+    "Ring of the Eternal Flame":{"slot": "ring","rarity": "rare",      "zone": (61,70),  "bonus": {"atk": 16, "def": 11}},
     "Hellforged Band":         {"slot": "ring", "rarity": "rare",      "zone": (61,70),  "bonus": {"def": 14, "atk": 12}},
     "Ignarath's Ember Ring":   {"slot": "ring", "rarity": "legendary", "zone": (61,70),  "bonus": {"atk": 22, "def": 16, "spd": 12}, "special": "fire_resist_10"},
 
@@ -529,18 +540,15 @@ def get_equipped_set(player):
 def equip_item(player, item):
     slot = item["slot"]
     if slot not in player.equipped:
-        print(f"  Cannot equip {item['name']}!")
+        print(f"  {Fore.RED}Cannot equip {item['name']}!{Style.RESET_ALL}")
         return
 
-    # unequip current item in slot first
     if player.equipped[slot] is not None:
         unequip_item(player, player.equipped[slot])
 
-    # equip new item
     player.equipped[slot] = item
     item["name"] = item.get("name", "Unknown")
 
-    # apply stat bonuses
     bonus = item.get("bonus", {})
     if "atk" in bonus:
         player.base_atk += bonus["atk"]
@@ -558,19 +566,18 @@ def equip_item(player, item):
         player.max_mp += bonus["max_mp"]
         player.mp = min(player.mp + bonus["max_mp"], player.max_mp)
 
-    print(f"  Equipped {item['name']}!")
+    colour = rarity_colour(item)
+    print(f"  {Fore.GREEN}Equipped {colour}{item['name']}{Style.RESET_ALL}{Fore.GREEN}!{Style.RESET_ALL}")
 
-    # check for set bonus
     set_name, set_data = get_equipped_set(player)
     if set_name:
-        print(f"\n  *** SET BONUS ACTIVATED: {set_name} ***")
-        print(f"  {set_data['desc']}")
+        print(f"\n  {Fore.YELLOW}*** SET BONUS ACTIVATED: {set_name} ***{Style.RESET_ALL}")
+        print(f"  {Fore.YELLOW}{set_data['desc']}{Style.RESET_ALL}")
 
 def unequip_item(player, item):
     slot = item["slot"]
     player.equipped[slot] = None
 
-    # remove stat bonuses
     bonus = item.get("bonus", {})
     if "atk" in bonus:
         player.base_atk -= bonus["atk"]
@@ -588,7 +595,8 @@ def unequip_item(player, item):
         player.max_mp -= bonus["max_mp"]
         player.mp = min(player.mp, player.max_mp)
 
-    print(f"  Unequipped {item['name']}!")
+    colour = rarity_colour(item)
+    print(f"  {Fore.RED}Unequipped {colour}{item['name']}{Style.RESET_ALL}{Fore.RED}.{Style.RESET_ALL}")
 
 RARITY_WEIGHTS_EARLY = {
     "common": 80,
@@ -627,7 +635,6 @@ def drop_loot(floor):
     pool = get_loot_pool(floor)
     matching = [(name, item) for name, item in pool if item["rarity"] == rarity]
 
-    # rare chance of legendary dropping at low floors
     if not matching:
         matching = [(name, item) for name, item in pool if item["rarity"] == "common"]
 

@@ -1,7 +1,19 @@
 import random
+from colorama import Fore, Style
 from player import Player, CLASS_ABILITIES
 from enemy import Enemy, BURN_IMMUNE, BURN_WEAK, FINAL_BOSS_TURN_TEXT
 from loot import get_equipped_set, SETS
+
+RARITY_COLOURS = {
+    "common":    Style.RESET_ALL,
+    "uncommon":  Fore.GREEN,
+    "rare":      Fore.BLUE,
+    "legendary": Fore.YELLOW,
+}
+
+def rarity_colour(item):
+    rarity = item.get("rarity", "common")
+    return RARITY_COLOURS.get(rarity, Style.RESET_ALL)
 
 def apply_status(target, effect, value, max_stacks):
     if not hasattr(target, 'status_effects'):
@@ -13,18 +25,18 @@ def apply_status(target, effect, value, max_stacks):
         'value': value,
         'turns': current.get('turns', 0) + 5 if effect == 'poison' else current.get('turns', 0) + 3,
     }
-    print(f"  {effect.upper()} applied! ({stacks} stack(s))")
+    print(f"  {Fore.MAGENTA}{effect.upper()} applied! ({stacks} stack(s)){Style.RESET_ALL}")
 
 def apply_burn(enemy, stacks=2, ignore_immune=False):
     if enemy.name in BURN_IMMUNE and not ignore_immune:
-        print(f"  {enemy.name} is immune to burn! The flask fizzles out.")
+        print(f"  {Fore.RED}{enemy.name} is immune to burn! The flask fizzles out.{Style.RESET_ALL}")
         return False
     multiplier = 2 if enemy.name in BURN_WEAK else 1
     value = 10 * multiplier
     for _ in range(stacks):
         apply_status(enemy, 'burn', value, 3)
     if multiplier == 2:
-        print(f"  {enemy.name} is weak to fire! The flames spread violently!")
+        print(f"  {Fore.RED}{enemy.name} is weak to fire! The flames spread violently!{Style.RESET_ALL}")
     return True
 
 def tick_statuses(target, eternal_inferno=False):
@@ -35,17 +47,17 @@ def tick_statuses(target, eternal_inferno=False):
         if effect == 'poison':
             dmg = int(data['value'] * data['stacks'])
             target.hp -= dmg
-            print(f"  Poison deals {dmg} damage! ({data['stacks']} stack(s))")
+            print(f"  {Fore.MAGENTA}Poison deals {dmg} damage! ({data['stacks']} stack(s)){Style.RESET_ALL}")
         elif effect == 'burn':
             dmg = int(data['value'] * data['stacks'])
             target.hp -= dmg
-            print(f"  Burn deals {dmg} damage! ({data['stacks']} stack(s))")
+            print(f"  {Fore.MAGENTA}Burn deals {dmg} damage! ({data['stacks']} stack(s)){Style.RESET_ALL}")
         data['turns'] -= 1
         if data['turns'] <= 0 and not (effect == 'burn' and eternal_inferno):
             expired.append(effect)
     for effect in expired:
         del target.status_effects[effect]
-        print(f"  {effect.upper()} has worn off.")
+        print(f"  {Fore.MAGENTA}{effect.upper()} has worn off.{Style.RESET_ALL}")
 
 ABILITIES = {
     "Power Strike":  {"cost": 15, "type": "damage",  "multiplier": 2.0, "status": None},
@@ -92,22 +104,22 @@ def handle_on_hit(player, enemy, weapon, set_bonus=None):
             player.poison_half_counter = 0
             poison_val = int(player.atk * 0.20)
             apply_status(enemy, 'poison', poison_val, 5)
-            print(f"  Spider Fang Blade drips poison!")
+            print(f"  {Fore.MAGENTA}Spider Fang Blade drips poison!{Style.RESET_ALL}")
 
     elif on_hit == "def_down":
         apply_status(enemy, 'def_down', 3, 3)
-        print(f"  Banewraith Blade corrodes the enemy's armour!")
+        print(f"  {Fore.MAGENTA}Banewraith Blade corrodes the enemy's armour!{Style.RESET_ALL}")
 
     elif on_hit == "poison_stack":
         poison_val = int(player.atk * 0.20)
         apply_status(enemy, 'poison', poison_val, 5)
-        print(f"  Corruption Staff seeps poison!")
+        print(f"  {Fore.MAGENTA}Corruption Staff seeps poison!{Style.RESET_ALL}")
 
     elif on_hit == "self_damage_10":
         if random.randint(1, 100) <= 10:
             dmg = max(1, int(player.hp * 0.05))
             player.hp -= dmg
-            print(f"  The Rusty Halberd cuts you for {dmg} damage!")
+            print(f"  {Fore.RED}The Rusty Halberd cuts you for {dmg} damage!{Style.RESET_ALL}")
 
     elif on_hit == "spd_up_0.1":
         increment = 0.1
@@ -115,31 +127,31 @@ def handle_on_hit(player, enemy, weapon, set_bonus=None):
             increment = 0.2
         player.base_spd += increment
         player.spd = player.base_spd
-        print(f"  Blade of the Elder Mind sharpens your reflexes! SPD +{increment:.1f}")
+        print(f"  {Fore.CYAN}Blade of the Elder Mind sharpens your reflexes! SPD +{increment:.1f}{Style.RESET_ALL}")
 
     elif on_hit == "burn_stack":
         eternal = set_bonus == "eternal_inferno"
         apply_burn(enemy, stacks=1, ignore_immune=eternal)
-        print(f"  The Eternal Flame Blade ignites the enemy!")
+        print(f"  {Fore.MAGENTA}The Eternal Flame Blade ignites the enemy!{Style.RESET_ALL}")
 
     elif on_hit == "instant_kill_1":
         chance = 5 if set_bonus == "void_incarnate" else 1
         if random.randint(1, 100) <= chance:
             enemy.hp = 0
-            print(f"  The Blade of the Abyss tears through reality! Instant kill!")
+            print(f"  {Fore.YELLOW}The Blade of the Abyss tears through reality! Instant kill!{Style.RESET_ALL}")
 
 def handle_on_kill(player, enemy, set_bonus=None):
     weapon = player.equipped.get("weapon")
     if weapon and weapon.get("on_kill") == "atk_up_2":
         player.base_atk += 2
         player.atk = player.base_atk
-        print(f"  Souldrainer feeds on the kill! ATK permanently +2!")
+        print(f"  {Fore.YELLOW}Souldrainer feeds on the kill! ATK permanently +2!{Style.RESET_ALL}")
 
     if set_bonus == "reapers_pact":
         if player.hp <= int(player.max_hp * 0.30):
             player.base_atk += 2
             player.atk = player.base_atk
-            print(f"  Reaper's Pact! ATK permanently +2!")
+            print(f"  {Fore.YELLOW}Reaper's Pact! ATK permanently +2!{Style.RESET_ALL}")
 
 def handle_accessory_on_kill(player):
     accessory = player.equipped.get("accessory")
@@ -149,16 +161,27 @@ def handle_accessory_on_kill(player):
     if special == "hp_restore_5_on_kill":
         restore = int(player.max_hp * 0.05)
         player.hp = min(player.hp + restore, player.max_hp)
-        print(f"  Amulet of the Wild restores {restore} HP!")
+        print(f"  {Fore.GREEN}Amulet of the Wild restores {restore} HP!{Style.RESET_ALL}")
     elif special == "hp_restore_15_on_kill":
         restore = int(player.max_hp * 0.15)
         player.hp = min(player.hp + restore, player.max_hp)
-        print(f"  Shield of Eternal Night restores {restore} HP!")
+        print(f"  {Fore.GREEN}Shield of Eternal Night restores {restore} HP!{Style.RESET_ALL}")
+
+def handle_sael(player, enemy):
+    if enemy.name != "Sael, the Debt Collector":
+        return
+    drain = max(1, int(player.gold * 0.05))
+    player.gold = max(0, player.gold - drain)
+    print(f"  {Fore.YELLOW}Sael drains {drain}g from you. (Gold remaining: {player.gold}g){Style.RESET_ALL}")
+    if player.gold == 0 and not enemy.enraged:
+        enemy.atk = int(enemy.atk * 1.2)
+        enemy.enraged = True
+        print(f"  {Fore.RED}Sael: \"You have nothing left to give. Then I will take something else.\"{Style.RESET_ALL}")
 
 def use_item(player, enemy=None):
     consumables = [item for item in player.inventory if item["slot"] == "consumable"]
     if not consumables:
-        print("  No items to use!")
+        print(f"  {Fore.RED}No items to use!{Style.RESET_ALL}")
         return
     print("\n  Choose an item:")
     for i, item in enumerate(consumables, 1):
@@ -172,34 +195,34 @@ def use_item(player, enemy=None):
     if "hp" in item["bonus"]:
         restore = int(player.max_hp * item["bonus"]["hp"])
         player.hp = min(player.hp + restore, player.max_hp)
-        print(f"  Used {item['name']}! Restored {restore} HP.")
+        print(f"  {Fore.GREEN}Used {item['name']}! Restored {restore} HP.{Style.RESET_ALL}")
     if "mp" in item["bonus"]:
         restore = int(player.max_mp * item["bonus"]["mp"])
         player.mp = min(player.mp + restore, player.max_mp)
-        print(f"  Used {item['name']}! Restored {restore} MP.")
+        print(f"  {Fore.BLUE}Used {item['name']}! Restored {restore} MP.{Style.RESET_ALL}")
     if "hp_set" in item["bonus"]:
         player.hp = max(1, int(player.max_hp * item["bonus"]["hp_set"]))
-        print(f"  You drink the {item['name']}... your vision goes red.")
+        print(f"  {Fore.RED}You drink the {item['name']}... your vision goes red.{Style.RESET_ALL}")
     if "atk_up" in item["bonus"]:
         apply_status(player, 'atk_up', item["bonus"]["atk_up"], 3)
-        print(f"  Used {item['name']}! ATK increased!")
+        print(f"  {Fore.GREEN}Used {item['name']}! ATK increased!{Style.RESET_ALL}")
     if "def_up" in item["bonus"]:
         apply_status(player, 'def_up', item["bonus"]["def_up"], 3)
-        print(f"  Used {item['name']}! DEF increased!")
+        print(f"  {Fore.GREEN}Used {item['name']}! DEF increased!{Style.RESET_ALL}")
     if "spd_up" in item["bonus"]:
         apply_status(player, 'spd_up', item["bonus"]["spd_up"], 3)
-        print(f"  Used {item['name']}! SPD increased!")
+        print(f"  {Fore.GREEN}Used {item['name']}! SPD increased!{Style.RESET_ALL}")
     if "poison" in item["bonus"] and enemy:
         poison_val = int(player.atk * 0.20)
         for _ in range(2):
             apply_status(enemy, 'poison', poison_val, 5)
-        print(f"  Used {item['name']}! Enemy poisoned!")
+        print(f"  {Fore.MAGENTA}Used {item['name']}! Enemy poisoned!{Style.RESET_ALL}")
     if "burn" in item["bonus"] and enemy:
         apply_burn(enemy, stacks=2)
     if "def_down" in item["bonus"] and enemy:
         for _ in range(2):
             apply_status(enemy, 'def_down', item["bonus"]["def_down"], 3)
-        print(f"  Used {item['name']}! Enemy defence reduced!")
+        print(f"  {Fore.MAGENTA}Used {item['name']}! Enemy defence reduced!{Style.RESET_ALL}")
 
     player.inventory.remove(item)
 
@@ -210,8 +233,8 @@ def choose_ability(player, enemy, set_bonus=None):
         cost = ABILITIES[ab]["cost"]
         if set_bonus == "forbidden_mastery":
             cost = max(1, int(cost * 0.2))
-        mp_note = "" if player.mp >= cost else " (not enough MP)"
-        print(f"  {i}. {ab} ({cost} MP){mp_note}")
+        mp_note = "" if player.mp >= cost else f" {Fore.RED}(not enough MP){Style.RESET_ALL}"
+        print(f"  {i}. {Fore.CYAN}{ab}{Style.RESET_ALL} ({Fore.BLUE}{cost} MP{Style.RESET_ALL}){mp_note}")
     choice = input("\n  > ").strip()
     if choice.isdigit() and 1 <= int(choice) <= len(abilities):
         ability = abilities[int(choice) - 1]
@@ -230,7 +253,7 @@ def use_ability(player, enemy, ability, set_bonus=None):
         cost = max(1, int(cost * 0.2))
 
     if player.mp < cost:
-        print("  Not enough MP!")
+        print(f"  {Fore.RED}Not enough MP!{Style.RESET_ALL}")
         return False
     player.mp -= cost
 
@@ -247,21 +270,21 @@ def use_ability(player, enemy, ability, set_bonus=None):
 
     if atype == "damage":
         dmg = do_hit(mult)
-        print(f"  {ability}! You deal {dmg} damage!")
+        print(f"  {Fore.CYAN}{ability}!{Style.RESET_ALL} {Fore.GREEN}You deal {dmg} damage!{Style.RESET_ALL}")
         if set_bonus == "forbidden_mastery" and random.randint(1, 100) <= 15:
             dmg2 = do_hit(mult)
-            print(f"  Forbidden Mastery! The spell echoes for {dmg2} extra damage!")
+            print(f"  {Fore.YELLOW}Forbidden Mastery! The spell echoes for {dmg2} extra damage!{Style.RESET_ALL}")
 
     elif atype == "double":
         dmg1 = do_hit(mult)
         dmg2 = do_hit(mult)
-        print(f"  {ability}! Two hits for {dmg1} and {dmg2} damage!")
+        print(f"  {Fore.CYAN}{ability}!{Style.RESET_ALL} {Fore.GREEN}Two hits for {dmg1} and {dmg2} damage!{Style.RESET_ALL}")
         if set_bonus == "forbidden_mastery" and random.randint(1, 100) <= 15:
             dmg3 = do_hit(mult)
-            print(f"  Forbidden Mastery! A third strike for {dmg3} damage!")
+            print(f"  {Fore.YELLOW}Forbidden Mastery! A third strike for {dmg3} damage!{Style.RESET_ALL}")
 
     elif atype == "buff":
-        print(f"  {ability}!")
+        print(f"  {Fore.CYAN}{ability}!{Style.RESET_ALL}")
 
     if status:
         effect, value, max_stacks = status
@@ -278,26 +301,27 @@ def show_turn_header(player, enemy, set_bonus=None):
     consumables = [item for item in player.inventory if item["slot"] == "consumable"]
 
     print(f"\n  {'='*40}")
-    print(f"  {enemy.name}")
-    print(f"  HP: {enemy.hp}/{enemy.max_hp}")
+    print(f"  {Fore.RED}{enemy.name}{Style.RESET_ALL}")
+    print(f"  HP: {Fore.RED}{enemy.hp}/{enemy.max_hp}{Style.RESET_ALL}")
     print(f"  {'='*40}")
-    print(f"\n  {player.name} | HP: {player.hp}/{player.max_hp} | MP: {player.mp}/{player.max_mp}")
+    print(f"\n  {player.name} | {Fore.GREEN}HP: {player.hp}/{player.max_hp}{Style.RESET_ALL} | {Fore.BLUE}MP: {player.mp}/{player.max_mp}{Style.RESET_ALL}")
 
     if set_bonus:
-        print(f"  Set Bonus: {set_bonus.replace('_', ' ').title()}")
+        print(f"  {Fore.YELLOW}Set Bonus: {set_bonus.replace('_', ' ').title()}{Style.RESET_ALL}")
 
     print(f"\n  Abilities:")
     for ab in abilities:
         cost = ABILITIES[ab]["cost"]
         if set_bonus == "forbidden_mastery":
             cost = max(1, int(cost * 0.2))
-        mp_note = "" if player.mp >= cost else " (not enough MP)"
-        print(f"    - {ab} ({cost} MP){mp_note}")
+        mp_note = "" if player.mp >= cost else f" {Fore.RED}(not enough MP){Style.RESET_ALL}"
+        print(f"    - {Fore.CYAN}{ab}{Style.RESET_ALL} ({Fore.BLUE}{cost} MP{Style.RESET_ALL}){mp_note}")
 
     if consumables:
         print(f"\n  Inventory:")
         for item in consumables:
-            print(f"    - {item['name']} — {item['desc']}")
+            colour = rarity_colour(item)
+            print(f"    - {colour}{item['name']}{Style.RESET_ALL} — {item['desc']}")
     else:
         print(f"\n  Inventory: empty")
 
@@ -309,33 +333,33 @@ def show_turn_header(player, enemy, set_bonus=None):
     print(f"  5. Ability + Use Item")
 
 def combat_final_boss(player, enemy):
-    print(f"\n  The hooded stranger rises from his chair.")
-    print(f"  \"So. You actually made it.\"")
-    print(f"\n  HP:  ???")
-    print(f"  ATK: ???")
-    print(f"  DEF: ???\n")
+    print(f"\n  {Fore.RED}The hooded stranger rises from his chair.{Style.RESET_ALL}")
+    print(f"  {Fore.RED}\"So. You actually made it.\"{Style.RESET_ALL}")
+    print(f"\n  HP:  {Fore.RED}???{Style.RESET_ALL}")
+    print(f"  ATK: {Fore.RED}???{Style.RESET_ALL}")
+    print(f"  DEF: {Fore.RED}???{Style.RESET_ALL}\n")
 
     turn_index = 0
     set_bonus = get_active_set_bonus(player)
 
     while player.hp > 0:
-
         print(f"\n  {'='*40}")
-        print(f"  ???")
-        print(f"  HP: ???")
+        print(f"  {Fore.RED}???{Style.RESET_ALL}")
+        print(f"  HP: {Fore.RED}???{Style.RESET_ALL}")
         print(f"  {'='*40}")
-        print(f"\n  {player.name} | HP: {player.hp}/{player.max_hp} | MP: {player.mp}/{player.max_mp}")
+        print(f"\n  {player.name} | {Fore.GREEN}HP: {player.hp}/{player.max_hp}{Style.RESET_ALL} | {Fore.BLUE}MP: {player.mp}/{player.max_mp}{Style.RESET_ALL}")
 
         abilities = CLASS_ABILITIES[player.char_class]
         print(f"\n  Abilities:")
         for ab in abilities:
-            print(f"    - {ab}")
+            print(f"    - {Fore.CYAN}{ab}{Style.RESET_ALL}")
 
         consumables = [item for item in player.inventory if item["slot"] == "consumable"]
         if consumables:
             print(f"\n  Inventory:")
             for item in consumables:
-                print(f"    - {item['name']} — {item['desc']}")
+                colour = rarity_colour(item)
+                print(f"    - {colour}{item['name']}{Style.RESET_ALL} — {item['desc']}")
         else:
             print(f"\n  Inventory: empty")
 
@@ -353,9 +377,9 @@ def combat_final_boss(player, enemy):
             if weapon and weapon.get("on_hit") == "instant_kill_1":
                 chance = 5 if set_bonus == "void_incarnate" else 1
                 if random.randint(1, 100) <= chance:
-                    print(f"\n  The Blade of the Abyss tears through reality!")
-                    print(f"  ???: \"...finally. Someone read my note.\"")
-                    print(f"\n  *** THE DUNGEON HAS BEEN DEFEATED. ***")
+                    print(f"\n  {Fore.YELLOW}The Blade of the Abyss tears through reality!{Style.RESET_ALL}")
+                    print(f"  {Fore.RED}???: \"...finally. Someone read the item description.\"{Style.RESET_ALL}")
+                    print(f"\n  {Fore.YELLOW}*** THE DUNGEON HAS BEEN DEFEATED. ***{Style.RESET_ALL}")
                     return "victory_final"
             print(f"  You attack. Your strike lands but draws no reaction.")
             if action == "4":
@@ -364,7 +388,7 @@ def combat_final_boss(player, enemy):
         elif action in ("2", "5"):
             print(f"\n  Choose an ability:")
             for i, ab in enumerate(abilities, 1):
-                print(f"  {i}. {ab}")
+                print(f"  {i}. {Fore.CYAN}{ab}{Style.RESET_ALL}")
             choice = input("\n  > ").strip()
             if choice.isdigit() and 1 <= int(choice) <= len(abilities):
                 ability = abilities[int(choice) - 1]
@@ -383,11 +407,11 @@ def combat_final_boss(player, enemy):
 
         dmg = int(player.max_hp * 0.20)
         player.hp = max(0, player.hp - dmg)
-        print(f"  He reaches out. You lose {dmg} HP.")
+        print(f"  {Fore.RED}He reaches out. You lose {dmg} HP. ({player.hp}/{player.max_hp} HP remaining){Style.RESET_ALL}")
 
         if player.hp <= 0:
-            print(f"\n  ???: \"You were so close.\"")
-            print(f"\n  You have been defeated by ???...")
+            print(f"\n  {Fore.RED}???: \"You were so close.\"{Style.RESET_ALL}")
+            print(f"\n  {Fore.RED}You have been defeated by ???...{Style.RESET_ALL}")
             return "dead"
 
     return "dead"
@@ -396,8 +420,8 @@ def combat(player, enemy):
     if hasattr(enemy, 'is_boss') and enemy.name == "???":
         return combat_final_boss(player, enemy)
 
-    print(f"\n  A {enemy.name} appears!")
-    print(f"  HP: {enemy.hp} | ATK: {enemy.atk} | DEF: {enemy.defense}\n")
+    print(f"\n  {Fore.RED}A {enemy.name} appears!{Style.RESET_ALL}")
+    print(f"  HP: {Fore.RED}{enemy.hp}{Style.RESET_ALL} | ATK: {Fore.RED}{enemy.atk}{Style.RESET_ALL} | DEF: {enemy.defense}\n")
 
     set_bonus = get_active_set_bonus(player)
     eternal_inferno = set_bonus == "eternal_inferno"
@@ -437,14 +461,14 @@ def combat(player, enemy):
         if set_bonus == "last_stand" and player.hp <= int(player.max_hp * 0.20):
             player.atk *= 2
             player.defense *= 2
-            print(f"  Last Stand! ATK and DEF doubled!")
+            print(f"  {Fore.YELLOW}Last Stand! ATK and DEF doubled!{Style.RESET_ALL}")
 
         show_turn_header(player, enemy, set_bonus)
         action = input("\n  > ").strip()
 
         if action == "1":
             dmg = enemy.take_damage(player.atk)
-            print(f"  You attack for {dmg} damage!")
+            print(f"  {Fore.GREEN}You attack for {dmg} damage! ({enemy.hp}/{enemy.max_hp} HP remaining){Style.RESET_ALL}")
             handle_on_hit(player, enemy, player.equipped.get("weapon"), set_bonus)
 
         elif action == "2":
@@ -455,7 +479,7 @@ def combat(player, enemy):
 
         elif action == "4":
             dmg = enemy.take_damage(player.atk)
-            print(f"  You attack for {dmg} damage!")
+            print(f"  {Fore.GREEN}You attack for {dmg} damage! ({enemy.hp}/{enemy.max_hp} HP remaining){Style.RESET_ALL}")
             handle_on_hit(player, enemy, player.equipped.get("weapon"), set_bonus)
             if not enemy.is_alive():
                 break
@@ -476,7 +500,7 @@ def combat(player, enemy):
             break
 
         tick_statuses(player)
-        print(f"\n  --- {enemy.name}'s turn ---")
+        print(f"\n  --- {Fore.RED}{enemy.name}'s turn{Style.RESET_ALL} ---")
 
         enemy_atk = enemy.atk
         if 'atk_down' in enemy.status_effects:
@@ -487,10 +511,12 @@ def combat(player, enemy):
         if ring and ring.get("special") == "fire_resist_10" and enemy.name in BURN_IMMUNE:
             enemy_atk = int(enemy_atk * 0.9)
 
+        handle_sael(player, enemy)
+
         if set_bonus == "unyielding_stone" and random.randint(1, 100) <= 20:
-            print(f"  Unyielding Stone! You absorb the hit!")
+            print(f"  {Fore.CYAN}Unyielding Stone! You absorb the hit!{Style.RESET_ALL}")
         elif first_hit_blocked:
-            print(f"  Igris's Oathbound Shield blocks the attack!")
+            print(f"  {Fore.CYAN}Igris's Oathbound Shield blocks the attack!{Style.RESET_ALL}")
             first_hit_blocked = False
         else:
             evade_chance = max(0, (player.spd / (player.spd + enemy.atk)) * 100 - 20)
@@ -503,7 +529,7 @@ def combat(player, enemy):
                 evade_chance += 5
 
             if random.randint(1, 100) <= evade_chance:
-                print(f"  You dodge the {enemy.name}'s attack!")
+                print(f"  {Fore.CYAN}You dodge the {enemy.name}'s attack!{Style.RESET_ALL}")
             else:
                 dmg = player.take_damage(enemy_atk)
                 accessory = player.equipped.get("accessory")
@@ -515,31 +541,37 @@ def combat(player, enemy):
                     if armor and armor.get("special") == "death_save" and not armor.get("used"):
                         player.hp = 1
                         armor["used"] = True
-                        print(f"  The Deathless Shroud saves you! It crumbles to dust.")
+                        print(f"  {Fore.YELLOW}The Deathless Shroud saves you! It crumbles to dust.{Style.RESET_ALL}")
                         player.equipped["armor"] = None
                     else:
-                        print(f"  {enemy.name} hits you for {dmg} damage!")
+                        print(f"  {Fore.RED}{enemy.name} strikes you for {dmg} damage! You have been slain.{Style.RESET_ALL}")
                         break
                 else:
-                    print(f"  {enemy.name} hits you for {dmg} damage!")
+                    print(f"  {Fore.RED}{enemy.name} strikes you for {dmg} damage! ({player.hp}/{player.max_hp} HP remaining){Style.RESET_ALL}")
 
                 accessory = player.equipped.get("accessory")
                 if accessory and accessory.get("special") == "reflect_10":
                     reflect = max(1, int(dmg * 0.1))
                     enemy.hp -= reflect
-                    print(f"  Reflected {reflect} damage!")
+                    print(f"  {Fore.GREEN}Reflected {reflect} damage!{Style.RESET_ALL}")
 
     if player.hp <= 0:
-        print(f"\n  You have been defeated by {enemy.name}...")
+        print(f"\n  {Fore.RED}You have been defeated by {enemy.name}...{Style.RESET_ALL}")
         return "dead"
     else:
-        print(f"\n  You defeated {enemy.name}!")
+        print(f"\n  {Fore.GREEN}You defeated {enemy.name}!{Style.RESET_ALL}")
         player.gain_xp(enemy.xp)
-        player.gold += enemy.gold
-        print(f"  +{enemy.xp} XP | +{enemy.gold} gold")
+
+        if enemy.name == "Sael, the Debt Collector":
+            print(f"  {Fore.RED}Sael: \"The debt... is cleared.\"{Style.RESET_ALL}")
+            player.gold += enemy.gold * 2
+            print(f"  {Fore.YELLOW}Sael releases his collection. +{enemy.gold * 2}g{Style.RESET_ALL}")
+        else:
+            player.gold += enemy.gold
+            print(f"  {Fore.YELLOW}+{enemy.xp} XP | +{enemy.gold} gold{Style.RESET_ALL}")
 
         if set_bonus == "void_incarnate" and random.randint(1, 100) <= 15:
-            print(f"  Void Incarnate! The next combat will be skipped.")
+            print(f"  {Fore.YELLOW}Void Incarnate! The next combat will be skipped.{Style.RESET_ALL}")
             player.skip_next_combat = True
 
         return "victory"

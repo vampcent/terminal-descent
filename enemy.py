@@ -76,23 +76,15 @@ ENEMY_DATA = {
 }
 
 BOSS_DATA = {
-    10:  {"name": "Gobzo, the Wolf Tamer",             "hp": 160, "atk": 13, "def": 3, "xp": 150, "gold": (20, 40)},
-    20:  {"name": "Grak, the Deep Foreman",            "hp": 230, "atk": 18, "def": 4, "xp": 280, "gold": (40, 70)},
-    30:  {"name": "Seraphine, the Undying Countess",   "hp": 290, "atk": 22, "def": 3, "xp": 380, "gold": (60, 100)},
-    40:  {"name": "Commander Igris, Oathbound Warrior","hp": 350, "atk": 27, "def": 5, "xp": 500, "gold": (80, 130)},
-    50:  {"name": "Headmaster Voss, the Corrupted",    "hp": 420, "atk": 32, "def": 4, "xp": 620, "gold": (100, 160)},
-    60:  {"name": "Zyx'ara, the Elder Mind",           "hp": 490, "atk": 35, "def": 4, "xp": 750, "gold": (130, 200)},
-    70:  {"name": "Ignarath, the Eternal Flame",       "hp": 580, "atk": 39, "def": 5, "xp": 900, "gold": (160, 250)},
-  
-    1000: {
-        "name": "???",
-        "hp": 999999999,
-        "atk": 0,
-        "def": 0,
-        "xp": 0,
-        "gold": (0, 0),
-        "special": "final_boss",
-    },
+    10:   {"name": "Gobzo, the Wolf Tamer",             "hp": 160, "atk": 13, "def": 3, "xp": 150,       "gold": (20, 40)},
+    20:   {"name": "Grak, the Deep Foreman",            "hp": 230, "atk": 18, "def": 4, "xp": 280,       "gold": (40, 70)},
+    30:   {"name": "Seraphine, the Undying Countess",   "hp": 290, "atk": 22, "def": 3, "xp": 380,       "gold": (60, 100)},
+    40:   {"name": "Commander Igris, Oathbound Warrior","hp": 350, "atk": 27, "def": 5, "xp": 500,       "gold": (80, 130)},
+    50:   {"name": "Headmaster Voss, the Corrupted",    "hp": 420, "atk": 32, "def": 4, "xp": 620,       "gold": (100, 160)},
+    60:   {"name": "Zyx'ara, the Elder Mind",           "hp": 490, "atk": 35, "def": 4, "xp": 750,       "gold": (130, 200)},
+    70:   {"name": "Ignarath, the Eternal Flame",       "hp": 580, "atk": 39, "def": 5, "xp": 900,       "gold": (160, 250)},
+    100:  {"name": "Sael, the Debt Collector",          "hp": 550, "atk": 45, "def": 6, "xp": 1200,      "gold": (200, 350), "special": "debt_collector"},
+    1000: {"name": "???",                               "hp": 999999999, "atk": 0, "def": 0, "xp": 0,    "gold": (0, 0),     "special": "final_boss"},
 }
 
 ZONE_POOLS = {
@@ -106,6 +98,15 @@ ZONE_POOLS = {
     (71, 999):["Void Wraith", "Soul Eater", "Abyssal Titan", "Nightmare", "The Undying"],
 }
 
+BOSS_FLOORS = [10, 20, 30, 40, 50, 60, 70, 100, 1000]
+
+def is_boss_floor(floor):
+    if floor in BOSS_FLOORS:
+        return True
+    if floor > 100 and floor != 1000 and floor % 10 == 0:
+        return True
+    return False
+
 class Enemy:
     def __init__(self, name, hp, atk, defense, xp, gold):
         self.name = name
@@ -118,6 +119,7 @@ class Enemy:
         self.gold = random.randint(*gold)
         self.is_boss = False
         self.status_effects = {}
+        self.enraged = False
 
     def take_damage(self, amount):
         damage = max(1, amount - self.defense)
@@ -145,9 +147,11 @@ def spawn_enemy(floor):
 def spawn_boss(floor):
     if floor in BOSS_DATA:
         data = BOSS_DATA[floor]
-    else:
+    elif floor < 100:
+        return None
+    elif floor > 100 and floor != 1000:
         last = BOSS_DATA[70]
-        scale = 1 + (floor - 70) * 0.1
+        scale = 1 + (floor - 100) * 0.01
         data = {
             "name": f"Abyssal Lord (Floor {floor})",
             "hp":   int(last["hp"]  * scale),
@@ -156,6 +160,9 @@ def spawn_boss(floor):
             "xp":   int(last["xp"]  * scale),
             "gold": (int(last["gold"][0] * scale), int(last["gold"][1] * scale)),
         }
+    else:
+        return None
+
     enemy = Enemy(data["name"], data["hp"], data["atk"], data["def"], data["xp"], data["gold"])
     enemy.is_boss = True
     return enemy
