@@ -30,7 +30,7 @@ Descend through a seemingly endless dungeon, floor by floor. Fight enemies, coll
 ### Installation
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/terminal-descent.git
+git clone https://github.com/vampcent/terminal-descent.git
 cd terminal-descent
 pip install -r requirements.txt
 python main.py
