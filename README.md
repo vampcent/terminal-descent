@@ -79,7 +79,7 @@ This builds the executables, checks that they start, and attaches them to a new 
 - [ ] Passive skill trees per class
 - [ ] Procedurally generated room descriptions
 - [ ] Shrine rooms with risk/reward choices
-- [ ] ASCII art for all characters and enemies
+
 ---
 
 ## Built With
